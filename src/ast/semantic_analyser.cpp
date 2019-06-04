@@ -542,6 +542,17 @@ void SemanticAnalyser::visit(Call &call)
   else if (call.func == "ustack") {
     check_stack_call(call, Type::ustack);
   }
+  else if (call.func == "strncmp") {
+    check_nargs(call, 3);
+    check_arg(call, Type::string, 0);
+    check_arg(call, Type::string, 1);
+    check_arg(call, Type::integer, 2, true);
+    call.type = SizedType(Type::integer, 8);
+
+    Integer &size = static_cast<Integer&>(*call.vargs->at(2));
+    if (size.n < 0)
+      err_ << "Builtin strncmp requires a non-negative size" << std::endl;
+  }
   else {
     err_ << "Unknown function: '" << call.func << "'" << std::endl;
     call.type = SizedType(Type::none, 0);

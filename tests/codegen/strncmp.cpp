@@ -4,9 +4,9 @@ namespace bpftrace {
 namespace test {
 namespace codegen {
 
-TEST(codegen, string_equal_comparison)
+TEST(codegen, strncmp_test)
 {
-  test("kretprobe:vfs_read /comm == \"sshd\"/ { @[comm] = count(); }",
+  test("kretprobe:vfs_read /strncmp(comm, \"sshd\", 2)/ { @[comm] = count(); }",
 
 #if LLVM_VERSION_MAJOR > 6
 R"EXPECTED(; Function Attrs: argmemonly nounwind
@@ -14,9 +14,6 @@ declare void @llvm.lifetime.start.p0i8(i64, i8* nocapture) #0
 
 define i64 @"kretprobe:vfs_read"(i8* nocapture readnone) local_unnamed_addr section "s_kretprobe:vfs_read_1" {
 entry:
-  %strcmp.char14 = alloca i8, align 1
-  %strcmp.char10 = alloca i8, align 1
-  %strcmp.char6 = alloca i8, align 1
   %strcmp.char2 = alloca i8, align 1
   %strcmp.char = alloca i8, align 1
   %comm = alloca [16 x i8], align 1
@@ -30,37 +27,13 @@ entry:
   %strcmp.cmp = icmp eq i8 %2, 115
   br i1 %strcmp.cmp, label %strcmp.loop, label %pred_false
 
-pred_false:                                       ; preds = %strcmp.loop5, %strcmp.loop1, %strcmp.loop, %entry, %strcmp.loop9
+pred_false:                                       ; preds = %entry, %strcmp.loop
   ret i64 0
 
 strcmp.loop:                                      ; preds = %entry
   call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %strcmp.char2)
   %3 = add [16 x i8]* %comm, i64 1
   %probe_read3 = call i64 inttoptr (i64 4 to i64 (i8*, i64, i8*)*)(i8* nonnull %strcmp.char2, i64 1, [16 x i8]* %3)
-  %4 = load i8, i8* %strcmp.char2, align 1
-  %strcmp.cmp4 = icmp eq i8 %4, 115
-  br i1 %strcmp.cmp4, label %strcmp.loop1, label %pred_false
-
-strcmp.loop1:                                     ; preds = %strcmp.loop
-  call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %strcmp.char6)
-  %5 = add [16 x i8]* %comm, i64 2
-  %probe_read7 = call i64 inttoptr (i64 4 to i64 (i8*, i64, i8*)*)(i8* nonnull %strcmp.char6, i64 1, [16 x i8]* %5)
-  %6 = load i8, i8* %strcmp.char6, align 1
-  %strcmp.cmp8 = icmp eq i8 %6, 104
-  br i1 %strcmp.cmp8, label %strcmp.loop5, label %pred_false
-
-strcmp.loop5:                                     ; preds = %strcmp.loop1
-  call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %strcmp.char10)
-  %7 = add [16 x i8]* %comm, i64 3
-  %probe_read11 = call i64 inttoptr (i64 4 to i64 (i8*, i64, i8*)*)(i8* nonnull %strcmp.char10, i64 1, [16 x i8]* %7)
-  %8 = load i8, i8* %strcmp.char10, align 1
-  %strcmp.cmp12 = icmp eq i8 %8, 100
-  br i1 %strcmp.cmp12, label %strcmp.loop9, label %pred_false
-
-strcmp.loop9:                                     ; preds = %strcmp.loop5
-  call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %strcmp.char14)
-  %9 = add [16 x i8]* %comm, i64 4
-  %probe_read15 = call i64 inttoptr (i64 4 to i64 (i8*, i64, i8*)*)(i8* nonnull %strcmp.char14, i64 1, [16 x i8]* %9)
   br label %pred_false
 }
 
@@ -79,11 +52,8 @@ declare void @llvm.lifetime.start.p0i8(i64, i8* nocapture) #1
 define i64 @"kretprobe:vfs_read"(i8* nocapture readnone) local_unnamed_addr section "s_kretprobe:vfs_read_1" {
 entry:
   %"@_val" = alloca i64, align 8
-  %comm17 = alloca [16 x i8], align 1
+  %comm5 = alloca [16 x i8], align 1
   %"@_key" = alloca [16 x i8], align 1
-  %strcmp.char14 = alloca i8, align 1
-  %strcmp.char10 = alloca i8, align 1
-  %strcmp.char6 = alloca i8, align 1
   %strcmp.char2 = alloca i8, align 1
   %strcmp.char = alloca i8, align 1
   %comm = alloca [16 x i8], align 1
@@ -97,16 +67,16 @@ entry:
   %strcmp.cmp = icmp eq i8 %2, 115
   br i1 %strcmp.cmp, label %strcmp.loop, label %pred_false
 
-pred_false:                                       ; preds = %strcmp.loop9, %strcmp.loop5, %strcmp.loop1, %strcmp.loop, %entry
+pred_false:                                       ; preds = %strcmp.loop, %entry
   ret i64 0
 
-pred_true:                                        ; preds = %strcmp.loop9
+pred_true:                                        ; preds = %strcmp.loop
   %3 = getelementptr inbounds [16 x i8], [16 x i8]* %"@_key", i64 0, i64 0
   call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %3)
-  %4 = getelementptr inbounds [16 x i8], [16 x i8]* %comm17, i64 0, i64 0
+  %4 = getelementptr inbounds [16 x i8], [16 x i8]* %comm5, i64 0, i64 0
   call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %4)
   call void @llvm.memset.p0i8.i64(i8* nonnull %4, i8 0, i64 16, i32 1, i1 false)
-  %get_comm18 = call i64 inttoptr (i64 16 to i64 (i8*, i64)*)([16 x i8]* nonnull %comm17, i64 16)
+  %get_comm6 = call i64 inttoptr (i64 16 to i64 (i8*, i64)*)([16 x i8]* nonnull %comm5, i64 16)
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* nonnull %3, i8* nonnull %4, i64 16, i32 1, i1 false)
   %pseudo = call i64 @llvm.bpf.pseudo(i64 1, i64 1)
   %lookup_elem = call i8* inttoptr (i64 1 to i8* (i8*, i8*)*)(i64 %pseudo, [16 x i8]* nonnull %"@_key")
@@ -119,46 +89,22 @@ strcmp.loop:                                      ; preds = %entry
   %probe_read3 = call i64 inttoptr (i64 4 to i64 (i8*, i64, i8*)*)(i8* nonnull %strcmp.char2, i64 1, [16 x i8]* %5)
   %6 = load i8, i8* %strcmp.char2, align 1
   %strcmp.cmp4 = icmp eq i8 %6, 115
-  br i1 %strcmp.cmp4, label %strcmp.loop1, label %pred_false
-
-strcmp.loop1:                                     ; preds = %strcmp.loop
-  call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %strcmp.char6)
-  %7 = add [16 x i8]* %comm, i64 2
-  %probe_read7 = call i64 inttoptr (i64 4 to i64 (i8*, i64, i8*)*)(i8* nonnull %strcmp.char6, i64 1, [16 x i8]* %7)
-  %8 = load i8, i8* %strcmp.char6, align 1
-  %strcmp.cmp8 = icmp eq i8 %8, 104
-  br i1 %strcmp.cmp8, label %strcmp.loop5, label %pred_false
-
-strcmp.loop5:                                     ; preds = %strcmp.loop1
-  call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %strcmp.char10)
-  %9 = add [16 x i8]* %comm, i64 3
-  %probe_read11 = call i64 inttoptr (i64 4 to i64 (i8*, i64, i8*)*)(i8* nonnull %strcmp.char10, i64 1, [16 x i8]* %9)
-  %10 = load i8, i8* %strcmp.char10, align 1
-  %strcmp.cmp12 = icmp eq i8 %10, 100
-  br i1 %strcmp.cmp12, label %strcmp.loop9, label %pred_false
-
-strcmp.loop9:                                     ; preds = %strcmp.loop5
-  call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %strcmp.char14)
-  %11 = add [16 x i8]* %comm, i64 4
-  %probe_read15 = call i64 inttoptr (i64 4 to i64 (i8*, i64, i8*)*)(i8* nonnull %strcmp.char14, i64 1, [16 x i8]* %11)
-  %12 = load i8, i8* %strcmp.char14, align 1
-  %strcmp.cmp16 = icmp eq i8 %12, 0
-  br i1 %strcmp.cmp16, label %pred_true, label %pred_false
+  br i1 %strcmp.cmp4, label %pred_true, label %pred_false
 
 lookup_success:                                   ; preds = %pred_true
-  %13 = load i64, i8* %lookup_elem, align 8
-  %phitmp = add i64 %13, 1
+  %7 = load i64, i8* %lookup_elem, align 8
+  %phitmp = add i64 %7, 1
   br label %lookup_merge
 
 lookup_merge:                                     ; preds = %pred_true, %lookup_success
   %lookup_elem_val.0 = phi i64 [ %phitmp, %lookup_success ], [ 1, %pred_true ]
-  %14 = bitcast i64* %"@_val" to i8*
-  call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %14)
+  %8 = bitcast i64* %"@_val" to i8*
+  call void @llvm.lifetime.start.p0i8(i64 -1, i8* nonnull %8)
   store i64 %lookup_elem_val.0, i64* %"@_val", align 8
-  %pseudo19 = call i64 @llvm.bpf.pseudo(i64 1, i64 1)
-  %update_elem = call i64 inttoptr (i64 2 to i64 (i8*, i8*, i8*, i64)*)(i64 %pseudo19, [16 x i8]* nonnull %"@_key", i64* nonnull %"@_val", i64 0)
+  %pseudo7 = call i64 @llvm.bpf.pseudo(i64 1, i64 1)
+  %update_elem = call i64 inttoptr (i64 2 to i64 (i8*, i8*, i8*, i64)*)(i64 %pseudo7, [16 x i8]* nonnull %"@_key", i64* nonnull %"@_val", i64 0)
   call void @llvm.lifetime.end.p0i8(i64 -1, i8* nonnull %3)
-  call void @llvm.lifetime.end.p0i8(i64 -1, i8* nonnull %14)
+  call void @llvm.lifetime.end.p0i8(i64 -1, i8* nonnull %8)
   ret i64 0
 }
 
